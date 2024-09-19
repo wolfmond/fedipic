@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<!--
+
+Version: 20240919.2146
+
+This is free and unencumbered software released into the public domain.
+
+Anyone is free to copy, modify, publish, use, compile, sell, or
+distribute this software, either in source code form or as a compiled
+binary, for any purpose, commercial or non-commercial, and by any
+means.
+
+In jurisdictions that recognize copyright laws, the author or authors
+of this software dedicate any and all copyright interest in the
+software to the public domain. We make this dedication for the benefit
+of the public at large and to the detriment of our heirs and
+successors. We intend this dedication to be an overt act of
+relinquishment in perpetuity of all present and future rights to this
+software under copyright law.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+For more information, please refer to <http://unlicense.org/>
+-->
+<html lang="de">
+<head>
+<script>
+	const your_instance = ''; // for example: troet.cafe
+	const accessToken = '';
+	/* If you need an accessToken, open Mastodon → Applications → New → (Insert a Name) → uncheck all items, except [x] read ... then save it. In the overview of the Apps click on your new app and copy the accessToken. That one is needed here. */
+	
+	/* 
+	
+	<<< ATTENTION >>>
+	
+	NEVER! EVER! Publish this Script/Website WITH your Credentials in it. Don't make it public, because otherwise everyone could use your API-Key/accessToken in the source-code. Don't do it. You fiddle around with this script on your own risk. If you want to make a public site, you need to script a workaround yourself; with PHP or another server-side script language to obfuscate your accessToken.
+	
+	By the way: This script was built for Mastodon instances.
+	*/ 
+	
+</script
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mastodon Gallery</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>📸</text></svg>">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, max-image-preview:none, notranslate" />
+	
+    <style>
+	
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: auto; /* Sicherstellen, dass Scrollen erlaubt ist */
+}
+	
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+	background-color:#222222;
+
+}
+
+.gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px;
+    justify-content: center; /* Zentriert die Bilder auf größeren Bildschirmen */
+	  height: 100vh; /* Höhe des Viewports */
+	overflow-y: auto; /* Erlaubt das vertikale Scrollen */
+}
+
+.gallery img {
+    width: 100%;
+    max-width: 600px; /* Maximale Breite auf größeren Bildschirmen */
+    height: auto;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+/* Anpassung für Mobilgeräte */
+@media (max-width: 768px) {
+    .gallery {
+        display: block; /* Ändere das Layout zu Block für mobile Geräte */
+        padding: 0;
+        gap: 0;
+    }
+
+    .gallery img {
+        width: 100%; /* Volle Breite des Bildschirms */
+        max-width: none;
+        margin-bottom: 10px; /* Abstände zwischen den Bildern */
+        border-radius: 0; /* Keine abgerundeten Ecken für Mobilgeräte */
+    }
+}
+
+#error, #firstload, .loading {
+	display:none;
+	}
+	
+.noscript {
+	position:absolute;
+	top:0px;
+	left:0px;
+	display:flex;
+	align-items:center;
+	justify-content:center;
+	height:100vh;
+	width:100vw;
+	overflow:hidden;
+}
+
+.firstload {
+	position:absolute;
+	top:0px;
+	left:0px;
+	display:flex!important;
+	align-items:center!important;
+	justify-content:center!important;
+	height:100vh!important;
+	width:100vw!important;
+	overflow:hidden!important;
+}
+
+#error {
+	position:absolute;
+	top:0px;
+	left:0px;
+	display:flex!important;
+	align-items:center!important;
+	justify-content:center!important;
+	flex-direction:column;
+	height:100vh!important;
+	width:80vw!important;
+	overflow:hidden!important;
+	color:white;
+	padding:1em;
+	text-align:center;
+}
+
+#firstloadbutton {
+	background-color:white;
+	font-size:1.2em;
+	border-radius:2em;
+}	
+
+
+</style>
+</head>
+<body>
+	<noscript class="noscript">
+	Java is not just an island 😉 Activate Javascript, come back here and reload.
+	</noscript>
+	<div id="error"></div>
+    <div id="gallery" class="gallery"></div>
+    <div id="loading" class="loading">Fetching images...</div>
+	<div id="firstload" class="firstload"><p><button id="firstloadbutton">Click to start</button></p></div>
+    <script>
+	document.addEventListener('DOMContentLoaded', () => {
+    const gallery = document.getElementById('gallery');
+    const loading = document.getElementById('loading');
+    const errordisplay = document.getElementById('error');
+    const firstloadID = document.getElementById('firstload');
+	
+    let page = 1;
+    let isLoading = false;
+    let maxId = null;
+	let error = 0;    
+    
+	/////////// No need to edit below this line //////////
+	
+	if (typeof accessToken === 'undefined' || accessToken === null || accessToken === '') {
+ error++;
+}
+	if (typeof your_instance === 'undefined' || your_instance === null || your_instance === '') {
+ error++;
+ error++;
+}
+
+if(error >0){
+	firstloadID.style.setProperty('display', 'none', 'important');
+	errordisplay.style.setProperty('display', 'flex', 'important');
+	if(error == 1){
+		errordisplay.innerHTML = '<p>Oopsie ... </p><p>Please insert the accessToken into the script. </p>';
+	} else if(error == 2){
+		errordisplay.innerHTML = '<p>Oopsie ... </p><p>Please insert the Instance into the script.</p>';
+	}
+	else if(error == 3){
+		errordisplay.innerHTML = '<p>Oopsie ... </p><p>Please insert the accessToken and the Instance into the script.</p>';
+	}
+
+}
+
+if(error < 1)
+{
+	errordisplay.style.setProperty('display', 'none', 'important');
+	const apiUrl = 'https://'+your_instance+'/api/v1/timelines/home';
+    const fetchImages = async () => {
+        if (isLoading) return;
+        isLoading = true;
+        loading.style.display = 'block';
+
+        try {
+            const url = new URL(apiUrl);
+            url.searchParams.append('page', page);
+            if (maxId) url.searchParams.append('max_id', maxId);
+
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+            const data = await response.json();
+            console.log('API Antwort:', data); // Überprüfe die Struktur hier
+
+            if (data.length > 0) {
+                maxId = data[data.length - 1].id; // Setze die ID für die nächste Anfrage
+                displayImages(data);
+                page++;
+            } else {
+                loading.textContent = 'Keine weiteren Bilder zum Laden';
+                window.removeEventListener('scroll', handleScroll); // Keine weiteren API-Anfragen
+            }
+
+        } catch (error) {
+            console.error('Fehler beim Abrufen der Bilder:', error);
+        } finally {
+            isLoading = false;
+            loading.style.display = 'none';
+        }
+    };
+
+    const displayImages = (data) => {
+        // Falls die Daten ein Array von Beiträgen sind
+        if (!Array.isArray(data)) {
+            console.error('Erwartete ein Array, aber die Daten sind kein Array:', data);
+            return;
+        }
+
+        data.forEach(item => {
+            const mediaAttachments = item.media_attachments || [];
+            let postUrl = item.uri; // Link zum Beitrag
+			
+			if (postUrl.includes('/activity')) {
+				postUrl = postUrl.replace('/activity', '');
+				}
+			
+			console.log(item);
+			
+
+            if (item.reblog) {
+                const reblogAttachments = item.reblog.media_attachments || [];
+                mediaAttachments.push(...reblogAttachments);
+            }
+
+            mediaAttachments.forEach(media => {
+                if (media.type === 'image') {
+                    const link = document.createElement('a');
+                    link.href = postUrl;
+                    link.target = '_blank'; // Öffne den Link in einem neuen Tab
+
+                    const img = document.createElement('img');
+                    img.src = media.url;
+                    link.appendChild(img);
+
+                    gallery.appendChild(link);
+                }
+            });
+        });
+    };
+
+	const handleScroll = () => {
+		if (gallery.scrollTop + gallery.clientHeight >= gallery.scrollHeight - 50) {
+			fetchImages();
+		}
+	};
+
+    // Event-Listener auf das `gallery`-Element setzen
+gallery.addEventListener('scroll', handleScroll);
+	
+		function firstload(){
+	
+	firstloadID.style.setProperty('display', 'none', 'important');
+	loading.style.display="block";
+	 fetchImages();
+	
+	}
+
+    // Initiales Laden der Bilder
+	//firstloadID.style.display = "block";
+	firstloadID.addEventListener('click', function() {
+	
+	    if (gallery.requestFullscreen) {
+        gallery.requestFullscreen();
+    } else if (gallery.mozRequestFullScreen) { // Firefox
+        gallery.mozRequestFullScreen();
+    } else if (gallery.webkitRequestFullscreen) { // Chrome, Safari und Opera
+        gallery.webkitRequestFullscreen();
+    } else if (gallery.msRequestFullscreen) { // Internet Explorer/Edge
+        gallery.msRequestFullscreen();
+    }
+	
+	
+		firstload();
+});
+	
+
+} // if error	
+   
+});
+
+	</script>
+</body>
+</html>
